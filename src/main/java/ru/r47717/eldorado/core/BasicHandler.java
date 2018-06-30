@@ -3,7 +3,8 @@ package ru.r47717.eldorado.core;
 import com.google.gson.Gson;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import ru.r47717.eldorado.Routes;
+import app.Routes;
+import ru.r47717.eldorado.core.controllers.PageNotFoundController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,10 +16,17 @@ import java.util.*;
 
 public class BasicHandler extends AbstractHandler {
 
-    protected final static String DEFAULT_CONTROLLER_NAME = "DefaultController";
-    protected final static String DEFAULT_METHOD_NAME = "index";
+    class RequestParam {
+        String name;
+        int position;
+        String value;
+    }
+
+    private final static String DEFAULT_CONTROLLER_NAME = "DefaultController";
+    private final static String DEFAULT_METHOD_NAME = "index";
 
     private Router router = new Router();
+    private List<RequestParam> params = new ArrayList<>();
 
     BasicHandler() {
         Routes.make(router);
@@ -32,38 +40,41 @@ public class BasicHandler extends AbstractHandler {
     {
         System.out.println("Body: " + body);
 
-        String controllerName;
+        Class controllerClass = PageNotFoundController.class;
         String fnName;
-        String controllerMethod = router.retrieve(baseRequest.getMethod().toLowerCase() + "@" + body);
+        Object[] data = (Object[]) router.retrieve(baseRequest.getMethod().toLowerCase() + "@" + body);
 
-        if (controllerMethod != null) {
-            String[] arr = controllerMethod.split("@");
-            controllerName = arr[0];
-            fnName = arr[1];
+        if (data != null) {
+            controllerClass = (Class) data[0];
+            fnName = (String) data[1];
+            //params = getRequestParams(body);
         } else {
             List<String> items = getDefaultHandler(body);
-            controllerName = items.get(0);
+            String controllerName = items.get(0);
+            try {
+                controllerClass = Class.forName("app.controllers." + controllerName);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
             fnName = items.get(1);
-            System.out.println(controllerName + " " + fnName);
         }
 
         String output = "";
 
         try {
 
-            Class cls = Class.forName("ru.r47717.eldorado.controllers." + controllerName);
-            Object controller = cls.newInstance();
+            Object controller = controllerClass.newInstance();
 
             for (Method method: controller.getClass().getMethods()) {
                 if (method.getName().equals(fnName)) {
-                    Map<String, String> map = (Map<String, String>) method.invoke(controller, request, response);
+                    Map<String, String> map = (Map<String, String>) method.invoke(controller);
                     Gson gson = new Gson();
                     output = gson.toJson(map);
                     break;
                 }
             }
 
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
 
@@ -76,8 +87,35 @@ public class BasicHandler extends AbstractHandler {
         baseRequest.setHandled(true);
     }
 
+    private List<RequestParam> getRequestParams(String pattern, String body) {
+        List<RequestParam> output = new ArrayList<>();
+        List<String> patternItems = new LinkedList<>(Arrays.asList(pattern.split("/")));
+        List<String> items = new LinkedList<>(Arrays.asList(body.split("/")));
 
-    protected List<String> getDefaultHandler(String path) {
+        if (patternItems.size() > 0 && patternItems.get(0).isEmpty()) {
+            patternItems.remove(0);  // trim first slash
+        }
+
+        if (items.size() > 0 && items.get(0).isEmpty()) {
+            items.remove(0);  // trim first slash
+        }
+
+        for (int i = 0; i < items.size(); i++) {
+            String segment = patternItems.get(i).trim();
+            if (segment.startsWith("{") && segment.endsWith("}")) {
+                RequestParam param = new RequestParam();
+                param.name = segment.substring(1, segment.length() - 1).trim();
+                param.position = i;
+                param.value = items.get(i).trim();
+                output.add(param);
+            }
+        }
+
+        return output;
+    }
+
+
+    private List<String> getDefaultHandler(String path) {
         List<String> items = new LinkedList<>(Arrays.asList(path.split("/")));
 
         if (items.size() > 0 && items.get(0).isEmpty()) {

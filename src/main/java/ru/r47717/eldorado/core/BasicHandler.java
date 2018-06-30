@@ -11,9 +11,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
+import java.util.*;
 
 public class BasicHandler extends AbstractHandler {
+
+    protected final static String DEFAULT_CONTROLLER_NAME = "DefaultController";
+    protected final static String DEFAULT_METHOD_NAME = "index";
 
     private Router router = new Router();
 
@@ -29,10 +32,21 @@ public class BasicHandler extends AbstractHandler {
     {
         System.out.println("Body: " + body);
 
-        String key = router.retrieve(baseRequest.getMethod().toLowerCase() + "@" + body);
-        String[] arr = key.split("@");
-        String controllerName = arr[0];
-        String fnName = arr[1];
+        String controllerName;
+        String fnName;
+        String controllerMethod = router.retrieve(baseRequest.getMethod().toLowerCase() + "@" + body);
+
+        if (controllerMethod != null) {
+            String[] arr = controllerMethod.split("@");
+            controllerName = arr[0];
+            fnName = arr[1];
+        } else {
+            List<String> items = getDefaultHandler(body);
+            controllerName = items.get(0);
+            fnName = items.get(1);
+            System.out.println(controllerName + " " + fnName);
+        }
+
         String output = "";
 
         try {
@@ -60,5 +74,34 @@ public class BasicHandler extends AbstractHandler {
 
         out.println(output);
         baseRequest.setHandled(true);
+    }
+
+
+    protected List<String> getDefaultHandler(String path) {
+        List<String> items = new LinkedList<>(Arrays.asList(path.split("/")));
+
+        if (items.size() > 0 && items.get(0).isEmpty()) {
+            items.remove(0);  // trim first slash
+        }
+
+        String controllerName = DEFAULT_CONTROLLER_NAME;
+        String methodName = DEFAULT_METHOD_NAME;
+
+        if (items.size() > 0) {
+            String segment = items.get(0);
+            controllerName = segment.substring(0, 1).toUpperCase() +
+                    segment.substring(1).toLowerCase() + "Controller";
+        }
+
+        if (items.size() > 1) {
+            methodName = items.get(1).toLowerCase();
+        }
+
+        return new ArrayList<>(Arrays.asList(controllerName, methodName));
+    }
+
+
+    protected void report404() {
+
     }
 }

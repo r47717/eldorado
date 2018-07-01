@@ -30,8 +30,15 @@ public class Router {
     }
 
     public void method(String method, String route, Class controller, String fn) {
-        String key = fn + "@" + route;
+        String key = method + "@" + route;
         Object[] data = new Object[]{controller, fn};
         routes.put(key, data);
+    }
+
+    public void dump() {
+        routes.forEach((k, v) -> {
+            System.out.print(k + " ");
+            System.out.println(v);
+        });
     }
 }

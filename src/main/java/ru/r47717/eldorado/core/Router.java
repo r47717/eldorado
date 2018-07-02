@@ -1,39 +1,130 @@
 package ru.r47717.eldorado.core;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 public class Router {
 
-    private Map<String, Object> routes = new HashMap<>();
-
-    public Object retrieve(String route) {
-        return routes.get(route);
+    class RouterEntry {
+        String method;
+        String pattern;
+        Class controller;
+        String fn;
+        Map<Integer, SegmentData> segments = new HashMap<>();
     }
 
-    public void get(String route, Class controller, String method) {
-        method("get", route, controller, method);
+    class SegmentData {
+        int position;
+        boolean isParameter = false;
+        String name;
+        String value = "";
+
     }
 
-    public void post(String route, Class controller, String method) {
-        method("post", route, controller, method);
+    private Map<String, RouterEntry> routes = new HashMap<>();
+
+    RouterEntry retrieve(String route) {
+        return getMatch(route);
     }
 
-    public void put(String route, Class controller, String method) {
-        method("put", route, controller, method);
+
+    public void get(String route, Class controller, String fn) {
+        method("get", route, controller, fn);
     }
 
-    public void delete(String route, Class controller, String method) {
-        method("delete", route, controller, method);
+    public void post(String route, Class controller, String fn) {
+        method("post", route, controller, fn);
     }
 
-    public void method(String method, String route, Class controller, String fn) {
-        String key = method + "@" + route;
-        Object[] data = new Object[]{controller, fn};
-        routes.put(key, data);
+    public void put(String route, Class controller, String fn) {
+        method("put", route, controller, fn);
     }
+
+    public void delete(String route, Class controller, String fn) {
+        method("delete", route, controller, fn);
+    }
+
+    public void method(String method, String pattern, Class controller, String fn) {
+        if (routes.containsKey(pattern)) {
+            return;
+        }
+
+        RouterEntry entry = new RouterEntry();
+        entry.method = method;
+        entry.pattern = pattern;
+        entry.controller = controller;
+        entry.fn = fn;
+        entry.segments = parsePattern(pattern);
+
+        routes.put(pattern, entry);
+    }
+
+
+    private Map<Integer, SegmentData> parsePattern(String pattern) {
+        String[] segments = pattern.split("/");
+        Map<Integer, SegmentData> map = new HashMap<>();
+
+        for (int i = 0; i < segments.length; i++) {
+            String segment = segments[i].trim();
+            if (segment.isEmpty()) {
+                continue;
+            }
+            SegmentData requestParam = new SegmentData();
+            requestParam.position = i;
+            if (segment.startsWith("{") && segment.endsWith("}")) {
+                requestParam.isParameter = true;
+                requestParam.name = segment.substring(1, segment.length() - 1).trim();
+            } else {
+                requestParam.name = segment;
+            }
+            map.put(i, requestParam);
+        }
+
+        return map;
+    }
+
+
+    private RouterEntry getMatch(String uri) {
+        RouterEntry match = routes.get(uri.trim());
+        if (match != null) {
+            return match;
+        }
+
+        String[] routeSegments = uri.split("/");
+
+        for (Map.Entry<String, RouterEntry> entry: routes.entrySet()) {
+            match = entry.getValue();
+            Map<Integer, SegmentData> patternSegments = entry.getValue().segments;
+
+            for (int i = 0; i < routeSegments.length; i++) {
+                String segment = routeSegments[i].trim();
+
+                if (segment.isEmpty()) {
+                    continue;
+                }
+                SegmentData patternSegment = patternSegments.get(i);
+
+                if (patternSegment == null) {
+                    match = null;
+                    break;
+                }
+
+                if (patternSegment.isParameter) {  ///
+                    patternSegment.value = segment;
+                } else if (!patternSegment.name.equals(segment)) {
+                    match = null;
+                    break;
+                }
+            }
+
+            if (match != null) {
+                break;
+            }
+        }
+
+        return match;
+    }
+
 
     public void dump() {
         routes.forEach((k, v) -> {

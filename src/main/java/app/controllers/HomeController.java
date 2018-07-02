@@ -21,9 +21,9 @@ public class HomeController extends Controller {
         return map;
     }
 
-    public Map<String, String> getPerson() {
+    public Map<String, String> getPerson(String name) {
         Map<String, String> map = new HashMap<>();
-        map.put("name", "Mike");
+        map.put("name", name);
 
         return map;
     }

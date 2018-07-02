@@ -21,6 +21,7 @@ public class BasicHandler extends AbstractHandler {
     private Router router = new Router();
     private Class controllerClass;
     private String methodName = DEFAULT_METHOD_NAME;
+    private List<Router.SegmentData> params = new ArrayList<>();
 
 
     BasicHandler() {
@@ -62,12 +63,19 @@ public class BasicHandler extends AbstractHandler {
 
     private boolean getRegisteredHandler(String body, Request baseRequest)
     {
-        String routerHash = baseRequest.getMethod().toLowerCase() + "@" + body;
-        Object[] data = (Object[]) router.retrieve(routerHash);
+        params = new ArrayList<>();
+        Router.RouterEntry entry = router.retrieve(body);
 
-        if (data != null) {
-            this.controllerClass = (Class) data[0];
-            this.methodName = (String) data[1];
+        if (entry != null) {
+            controllerClass = entry.controller;
+            methodName = entry.fn;
+
+            entry.segments.entrySet().forEach((segmentDataEntry) -> {
+                Router.SegmentData data = segmentDataEntry.getValue();
+                if (data.isParameter) {
+                    params.add(data);
+                }
+            });
 
             return true;
         }
@@ -85,7 +93,16 @@ public class BasicHandler extends AbstractHandler {
         for (Method method: controller.getClass().getMethods()) {
             if (method.getName().equals(methodName)) {
                 methodFound = true;
-                Map<String, String> map = (Map<String, String>) method.invoke(controller);
+
+                String[] paramsArray = new String[params.size()];
+                for (int i = 0; i < params.size(); i++) {
+                    paramsArray[i] = params.get(i).value;
+                }
+
+                Map<String, String> map;
+                map = (Map<String, String>) ((params.size() > 0)
+                        ? method.invoke(controller, paramsArray)
+                        : method.invoke(controller));
                 Gson gson = new Gson();
                 output = gson.toJson(map);
                 break;
@@ -100,7 +117,7 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    protected String getAppControllerPackage() {
+    private String getAppControllerPackage() {
         return "app.controllers";
     }
 

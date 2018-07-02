@@ -1,5 +1,10 @@
 package ru.r47717.eldorado.core;
 
+import ru.r47717.eldorado.core.di.Container;
+import ru.r47717.eldorado.core.di.Inject;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
 
@@ -65,6 +70,8 @@ public class Router {
         entry.segments = parsePattern(pattern);
 
         routes.put(pattern, entry);
+
+        processAnnotations(controller);
     }
 
     public void method(String method, String pattern, Function<String, String> closure) {
@@ -80,6 +87,17 @@ public class Router {
         entry.segments = parsePattern(pattern);
 
         routes.put(pattern, entry);
+    }
+
+
+    private void processAnnotations(Class controllerClass) {
+        Field[] fields = controllerClass.getDeclaredFields();
+        for (Field field: fields) {
+            Annotation annotation = field.getAnnotation(Inject.class);
+            if (annotation != null) {
+                Container.inject(controllerClass, field);
+            }
+        }
     }
 
 

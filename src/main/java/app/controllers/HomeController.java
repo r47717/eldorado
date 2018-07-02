@@ -1,11 +1,17 @@
 package app.controllers;
 
+import app.services.MyService;
 import ru.r47717.eldorado.core.controllers.Controller;
+import ru.r47717.eldorado.core.di.Inject;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class HomeController extends Controller {
+
+    @Inject
+    private MyService myService;
+
 
     public Map<String, String> index() {
         Map<String, String> map = new HashMap<>();

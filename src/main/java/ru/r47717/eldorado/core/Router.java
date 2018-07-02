@@ -61,7 +61,10 @@ public class Router {
 
 
     private Map<Integer, SegmentData> parsePattern(String pattern) {
-        String[] segments = pattern.split("/");
+        String[] segments = Arrays.stream(pattern.split("/"))
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .toArray(String[]::new);
         Map<Integer, SegmentData> map = new HashMap<>();
 
         for (int i = 0; i < segments.length; i++) {
@@ -90,18 +93,22 @@ public class Router {
             return match;
         }
 
-        String[] routeSegments = uri.split("/");
+        String[] routeSegments = Arrays.stream(uri.split("/"))
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .toArray(String[]::new);
 
         for (Map.Entry<String, RouterEntry> entry: routes.entrySet()) {
             match = entry.getValue();
             Map<Integer, SegmentData> patternSegments = entry.getValue().segments;
 
-            for (int i = 0; i < routeSegments.length; i++) {
-                String segment = routeSegments[i].trim();
+            if (routeSegments.length != patternSegments.size()) {
+                match = null;
+                continue;
+            }
 
-                if (segment.isEmpty()) {
-                    continue;
-                }
+            for (int i = 0; i < routeSegments.length; i++) {
+                String segment = routeSegments[i];
                 SegmentData patternSegment = patternSegments.get(i);
 
                 if (patternSegment == null) {
@@ -109,7 +116,7 @@ public class Router {
                     break;
                 }
 
-                if (patternSegment.isParameter) {  ///
+                if (patternSegment.isParameter) {
                     patternSegment.value = segment;
                 } else if (!patternSegment.name.equals(segment)) {
                     match = null;

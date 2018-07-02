@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import app.Routes;
+import ru.r47717.eldorado.core.controllers.InternalServerErrorController;
 import ru.r47717.eldorado.core.controllers.PageNotFoundController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +14,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+
 
 public class BasicHandler extends AbstractHandler {
 
@@ -35,24 +37,27 @@ public class BasicHandler extends AbstractHandler {
                         HttpServletRequest request,
                         HttpServletResponse response) throws IOException
     {
-        if (!getRegisteredHandler(body, baseRequest) && !getDefaultHandler(body)) {
-            controllerClass = PageNotFoundController.class;
-            methodName = "index";
-            response.setContentType("text/plain");
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        } else {
-            response.setContentType("application/json");
-            response.setStatus(HttpServletResponse.SC_OK);
-        }
-
         String output;
+
         try {
-            output = invokeControllerMethod();
-        } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            if (getRegisteredHandler(body) || getDefaultHandler(body)) {
+                response.setContentType("application/json");
+                response.setStatus(HttpServletResponse.SC_OK);
+                output = invokeControllerMethod();
+            } else {
+                throw new PageNotFoundException();
+            }
+        } catch (PageNotFoundException e) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setContentType("text/plain");
+            PageNotFoundController controller = new PageNotFoundController();
+            output = controller.index();
+        } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.setContentType("text/plain");
-            output = "Wrong routing config";
+            InternalServerErrorController controller = new InternalServerErrorController();
+            output = controller.index();
         }
 
         PrintWriter out = response.getWriter();
@@ -61,7 +66,7 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    private boolean getRegisteredHandler(String body, Request baseRequest)
+    private boolean getRegisteredHandler(String body)
     {
         params = new ArrayList<>();
         Router.RouterEntry entry = router.retrieve(body);
@@ -70,7 +75,7 @@ public class BasicHandler extends AbstractHandler {
             controllerClass = entry.controller;
             methodName = entry.fn;
 
-            entry.segments.entrySet().forEach((segmentDataEntry) -> {
+            entry.segments.entrySet().forEach(segmentDataEntry -> {
                 Router.SegmentData data = segmentDataEntry.getValue();
                 if (data.isParameter) {
                     params.add(data);
@@ -84,7 +89,7 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    private String invokeControllerMethod() throws IllegalAccessException, InstantiationException, InvocationTargetException {
+    private String invokeControllerMethod() throws IllegalAccessException, InstantiationException, InvocationTargetException, PageNotFoundException {
         String output = null;
         boolean methodFound = false;
 
@@ -110,7 +115,7 @@ public class BasicHandler extends AbstractHandler {
         }
 
         if (!methodFound) {
-            throw new IllegalAccessException();
+            throw new PageNotFoundException();
         }
 
         return output;
@@ -124,6 +129,7 @@ public class BasicHandler extends AbstractHandler {
 
     private boolean getDefaultHandler(String path) {
         List<String> items = new LinkedList<>(Arrays.asList(path.split("/")));
+        methodName = DEFAULT_METHOD_NAME;
 
         if (items.size() > 0 && items.get(0).isEmpty()) {
             items.remove(0);  // trim first slash

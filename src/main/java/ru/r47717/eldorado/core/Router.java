@@ -6,10 +6,12 @@ import java.util.function.Function;
 public class Router {
 
     class RouterEntry {
+        boolean isClosure = false;
         String method;
         String pattern;
         Class controller;
         String fn;
+        Function<String, String> closure;
         Map<Integer, SegmentData> segments = new HashMap<>();
     }
 
@@ -32,6 +34,10 @@ public class Router {
         method("get", route, controller, fn);
     }
 
+    public void get(String route, Function<String, String> closure) {
+        method("get", route, closure);
+    }
+
     public void post(String route, Class controller, String fn) {
         method("post", route, controller, fn);
     }
@@ -50,10 +56,27 @@ public class Router {
         }
 
         RouterEntry entry = new RouterEntry();
+        entry.isClosure = false;
+        entry.closure = null;
         entry.method = method;
         entry.pattern = pattern;
         entry.controller = controller;
         entry.fn = fn;
+        entry.segments = parsePattern(pattern);
+
+        routes.put(pattern, entry);
+    }
+
+    public void method(String method, String pattern, Function<String, String> closure) {
+        if (routes.containsKey(pattern)) {
+            return;
+        }
+
+        RouterEntry entry = new RouterEntry();
+        entry.isClosure = true;
+        entry.closure = closure;
+        entry.method = method;
+        entry.pattern = pattern;
         entry.segments = parsePattern(pattern);
 
         routes.put(pattern, entry);

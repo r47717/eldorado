@@ -13,5 +13,7 @@ public class Routes
         router.get("/test2", HomeController.class, "index2");
 
         router.get("/people/{name}", HomeController.class, "getPerson");
+
+        router.get("/closure/{param}", str -> "URL parameter is: " + str);
     }
 }

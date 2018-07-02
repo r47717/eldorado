@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Function;
 
 
 public class BasicHandler extends AbstractHandler {
@@ -22,12 +23,21 @@ public class BasicHandler extends AbstractHandler {
 
     private Router router = new Router();
     private Class controllerClass;
-    private String methodName = DEFAULT_METHOD_NAME;
-    private List<Router.SegmentData> params = new ArrayList<>();
+    private String methodName;
+    private Function<String, String> closure;
+    private List<Router.SegmentData> params;
 
 
     BasicHandler() {
         Routes.make(router);
+    }
+
+
+    private void initProperties() {
+        controllerClass = null;
+        methodName = DEFAULT_METHOD_NAME;
+        closure = null;
+        params = new ArrayList<>();
     }
 
 
@@ -37,11 +47,17 @@ public class BasicHandler extends AbstractHandler {
                         HttpServletRequest request,
                         HttpServletResponse response) throws IOException
     {
+        initProperties();
+
         String output;
 
         try {
             if (getRegisteredHandler(body) || getDefaultHandler(body)) {
-                response.setContentType("application/json");
+                if (closure == null) {
+                    response.setContentType("application/json");
+                } else {
+                    response.setContentType("text/plain");
+                }
                 response.setStatus(HttpServletResponse.SC_OK);
                 output = invokeControllerMethod();
             } else {
@@ -68,12 +84,16 @@ public class BasicHandler extends AbstractHandler {
 
     private boolean getRegisteredHandler(String body)
     {
-        params = new ArrayList<>();
         Router.RouterEntry entry = router.retrieve(body);
 
         if (entry != null) {
-            controllerClass = entry.controller;
-            methodName = entry.fn;
+
+            if (entry.isClosure) {
+               closure = entry.closure;
+            } else {
+                controllerClass = entry.controller;
+                methodName = entry.fn;
+            }
 
             entry.segments.entrySet().forEach(segmentDataEntry -> {
                 Router.SegmentData data = segmentDataEntry.getValue();
@@ -92,6 +112,11 @@ public class BasicHandler extends AbstractHandler {
     private String invokeControllerMethod() throws IllegalAccessException, InstantiationException, InvocationTargetException, PageNotFoundException {
         String output = null;
         boolean methodFound = false;
+
+        if (closure != null) {
+            String param = params.size() > 0 ? params.get(0).value : "";
+            return closure.apply(param);
+        }
 
         Object controller = controllerClass.newInstance();
 
@@ -129,7 +154,6 @@ public class BasicHandler extends AbstractHandler {
 
     private boolean getDefaultHandler(String path) {
         List<String> items = new LinkedList<>(Arrays.asList(path.split("/")));
-        methodName = DEFAULT_METHOD_NAME;
 
         if (items.size() > 0 && items.get(0).isEmpty()) {
             items.remove(0);  // trim first slash

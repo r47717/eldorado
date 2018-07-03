@@ -1,11 +1,11 @@
 package app;
 
-import ru.r47717.eldorado.core.router.Router;
 import app.controllers.HomeController;
+import ru.r47717.eldorado.core.router.RouterInterface;
 
 public class Routes
 {
-    public static void make(Router router) {
+    public static void make(RouterInterface router) {
 
         // Add routes here
 

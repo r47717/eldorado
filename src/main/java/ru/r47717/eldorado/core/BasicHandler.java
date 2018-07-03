@@ -8,6 +8,9 @@ import ru.r47717.eldorado.core.controllers.InternalServerErrorController;
 import ru.r47717.eldorado.core.controllers.PageNotFoundController;
 import ru.r47717.eldorado.core.exceptions.PageNotFoundException;
 import ru.r47717.eldorado.core.router.Router;
+import ru.r47717.eldorado.core.router.RouterEntry;
+import ru.r47717.eldorado.core.router.RouterInterface;
+import ru.r47717.eldorado.core.router.SegmentData;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,13 +28,13 @@ import java.util.function.Function;
 public class BasicHandler extends AbstractHandler {
 
     private final static String DEFAULT_METHOD_NAME = "index";
-    private final Router router = new Router();
+    private final RouterInterface router = new Router();
 
     private static class RequestContext {
         private Class controllerClass = null;
         private String methodName = DEFAULT_METHOD_NAME;
         private Function<String, String> closure = null;
-        private List<Router.SegmentData> params = new ArrayList<>();
+        private List<SegmentData> params = new ArrayList<>();
     }
 
 
@@ -95,7 +98,7 @@ public class BasicHandler extends AbstractHandler {
      */
     private boolean getRegisteredHandler(RequestContext ctx, String body)
     {
-        Router.RouterEntry entry = router.retrieve(body);
+        RouterEntry entry = router.retrieve(body);
 
         if (entry != null) {
 
@@ -107,7 +110,7 @@ public class BasicHandler extends AbstractHandler {
             }
 
             entry.segments.entrySet().forEach(segmentDataEntry -> {
-                Router.SegmentData data = segmentDataEntry.getValue();
+                SegmentData data = segmentDataEntry.getValue();
                 if (data.isParameter) {
                     ctx.params.add(data);
                 }

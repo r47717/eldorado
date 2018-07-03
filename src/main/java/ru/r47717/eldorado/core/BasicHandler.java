@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import app.Routes;
-import org.eclipse.jetty.util.log.Logger;
 import ru.r47717.eldorado.core.controllers.InternalServerErrorController;
 import ru.r47717.eldorado.core.controllers.PageNotFoundController;
 
@@ -21,24 +20,18 @@ import java.util.function.Function;
 public class BasicHandler extends AbstractHandler {
 
     private final static String DEFAULT_METHOD_NAME = "index";
+    private final Router router = new Router();
 
-    private Router router = new Router();
-    private Class controllerClass;
-    private String methodName;
-    private Function<String, String> closure;
-    private List<Router.SegmentData> params;
+    private static class RequestContext {
+        private Class controllerClass = null;
+        private String methodName = DEFAULT_METHOD_NAME;
+        private Function<String, String> closure = null;
+        private List<Router.SegmentData> params = new ArrayList<>();
+    }
 
 
     BasicHandler() {
         Routes.make(router);
-    }
-
-
-    private void initProperties() {
-        controllerClass = null;
-        methodName = DEFAULT_METHOD_NAME;
-        closure = null;
-        params = new ArrayList<>();
     }
 
 
@@ -48,19 +41,19 @@ public class BasicHandler extends AbstractHandler {
                         HttpServletRequest request,
                         HttpServletResponse response) throws IOException
     {
-        initProperties();
+        RequestContext ctx = new RequestContext();
 
         String output;
 
         try {
-            if (getRegisteredHandler(body) || getDefaultHandler(body)) {
-                if (closure == null) {
+            if (getRegisteredHandler(ctx, body) || getDefaultHandler(ctx, body)) {
+                if (ctx.closure == null) {
                     response.setContentType("application/json");
                 } else {
                     response.setContentType("text/plain");
                 }
                 response.setStatus(HttpServletResponse.SC_OK);
-                output = invokeControllerMethod();
+                output = invokeControllerMethod(ctx);
             } else {
                 throw new PageNotFoundException();
             }
@@ -83,23 +76,23 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    private boolean getRegisteredHandler(String body)
+    private boolean getRegisteredHandler(RequestContext ctx, String body)
     {
         Router.RouterEntry entry = router.retrieve(body);
 
         if (entry != null) {
 
             if (entry.isClosure) {
-               closure = entry.closure;
+               ctx.closure = entry.closure;
             } else {
-                controllerClass = entry.controller;
-                methodName = entry.fn;
+                ctx.controllerClass = entry.controller;
+                ctx.methodName = entry.fn;
             }
 
             entry.segments.entrySet().forEach(segmentDataEntry -> {
                 Router.SegmentData data = segmentDataEntry.getValue();
                 if (data.isParameter) {
-                    params.add(data);
+                    ctx.params.add(data);
                 }
             });
 
@@ -110,28 +103,30 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    private String invokeControllerMethod() throws IllegalAccessException, InstantiationException, InvocationTargetException, PageNotFoundException {
+    private String invokeControllerMethod(RequestContext ctx) throws IllegalAccessException,
+            InvocationTargetException, PageNotFoundException, InstantiationException
+    {
         String output = null;
         boolean methodFound = false;
 
-        if (closure != null) {
-            String param = params.size() > 0 ? params.get(0).value : "";
-            return closure.apply(param);
+        if (ctx.closure != null) {
+            String param = ctx.params.size() > 0 ? ctx.params.get(0).value : "";
+            return ctx.closure.apply(param);
         }
 
-        Object controller = controllerClass.newInstance();
+        Object controller = ctx.controllerClass.newInstance();
 
         for (Method method: controller.getClass().getMethods()) {
-            if (method.getName().equals(methodName)) {
+            if (method.getName().equals(ctx.methodName)) {
                 methodFound = true;
 
-                String[] paramsArray = new String[params.size()];
-                for (int i = 0; i < params.size(); i++) {
-                    paramsArray[i] = params.get(i).value;
+                String[] paramsArray = new String[ctx.params.size()];
+                for (int i = 0; i < ctx.params.size(); i++) {
+                    paramsArray[i] = ctx.params.get(i).value;
                 }
 
                 Map<String, String> map;
-                map = (Map<String, String>) ((params.size() > 0)
+                map = (Map<String, String>) ((ctx.params.size() > 0)
                         ? method.invoke(controller, paramsArray)
                         : method.invoke(controller));
                 Gson gson = new Gson();
@@ -153,7 +148,7 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    private boolean getDefaultHandler(String path) {
+    private boolean getDefaultHandler(RequestContext ctx, String path) {
         List<String> items = new LinkedList<>(Arrays.asList(path.split("/")));
 
         if (items.size() > 0 && items.get(0).isEmpty()) {
@@ -171,11 +166,11 @@ public class BasicHandler extends AbstractHandler {
         }
 
         if (items.size() > 1) {
-            methodName = items.get(1).toLowerCase();
+            ctx.methodName = items.get(1).toLowerCase();
         }
 
         try {
-            controllerClass = Class.forName(getAppControllerPackage() + "." + controllerName);
+            ctx.controllerClass = Class.forName(getAppControllerPackage() + "." + controllerName);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             return false;

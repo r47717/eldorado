@@ -11,24 +11,53 @@ import java.util.function.Function;
 public class Router {
 
     class RouterEntry {
-        boolean isClosure = false;
+        boolean isClosure;
         String method;
         String pattern;
         Class controller;
         String fn;
         Function<String, String> closure;
-        Map<Integer, SegmentData> segments = new HashMap<>();
+        Map<Integer, SegmentData> segments;
+
+        RouterEntry() {
+            this.isClosure = false;
+            this.controller = null;
+            this.closure = null;
+            this.segments = new HashMap<>();
+        }
+
+        RouterEntry(RouterEntry that) {
+            this.isClosure = that.isClosure;
+            this.method = that.method;
+            this.pattern = that.pattern;
+            this.controller = that.controller;
+            this.fn = that.fn;
+            this.closure = that.closure;
+            this.segments = new HashMap<>();
+            that.segments.forEach((k, v) -> this.segments.put(k, new SegmentData(v)));
+        }
     }
 
     class SegmentData {
         int position;
-        boolean isParameter = false;
+        boolean isParameter;
         String name;
-        String value = "";
+        String value;
 
+        SegmentData() {
+            isParameter = false;
+        }
+
+        SegmentData(SegmentData that) {
+            this.position = that.position;
+            this.isParameter = that.isParameter;
+            this.name = that.name;
+            this.value = that.value;
+        }
     }
 
     private Map<String, RouterEntry> routes = new HashMap<>();
+
 
     RouterEntry retrieve(String route) {
         return getMatch(route);
@@ -106,10 +135,11 @@ public class Router {
                 .map(String::trim)
                 .filter(item -> !item.isEmpty())
                 .toArray(String[]::new);
+
         Map<Integer, SegmentData> map = new HashMap<>();
 
         for (int i = 0; i < segments.length; i++) {
-            String segment = segments[i].trim();
+            String segment = segments[i];
             if (segment.isEmpty()) {
                 continue;
             }
@@ -130,6 +160,7 @@ public class Router {
 
     private RouterEntry getMatch(String uri) {
         RouterEntry match = routes.get(uri.trim());
+
         if (match != null) {
             return match;
         }
@@ -140,8 +171,8 @@ public class Router {
                 .toArray(String[]::new);
 
         for (Map.Entry<String, RouterEntry> entry: routes.entrySet()) {
-            match = entry.getValue();
-            Map<Integer, SegmentData> patternSegments = entry.getValue().segments;
+            match = new RouterEntry(entry.getValue());
+            Map<Integer, SegmentData> patternSegments = match.segments;
 
             if (routeSegments.length != patternSegments.size()) {
                 match = null;
@@ -169,6 +200,7 @@ public class Router {
                 break;
             }
         }
+
 
         return match;
     }

@@ -6,6 +6,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import app.Routes;
 import ru.r47717.eldorado.core.controllers.InternalServerErrorController;
 import ru.r47717.eldorado.core.controllers.PageNotFoundController;
+import ru.r47717.eldorado.core.exceptions.PageNotFoundException;
+import ru.r47717.eldorado.core.router.Router;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,6 +19,9 @@ import java.util.*;
 import java.util.function.Function;
 
 
+/**
+ * Handler for all incoming HTTP requests
+ */
 public class BasicHandler extends AbstractHandler {
 
     private final static String DEFAULT_METHOD_NAME = "index";
@@ -35,6 +40,13 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
+    /**
+     * @param body - request URI
+     * @param baseRequest - original HTTP request
+     * @param request - servlet request
+     * @param response - servlet response
+     * @throws IOException
+     */
     @Override
     public void handle(String body,
                         Request baseRequest,
@@ -76,6 +88,11 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
+    /**
+     * @param ctx request context
+     * @param body request URL
+     * @return true if found
+     */
     private boolean getRegisteredHandler(RequestContext ctx, String body)
     {
         Router.RouterEntry entry = router.retrieve(body);
@@ -103,6 +120,14 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
+    /**
+     * @param ctx - request context
+     * @return HTTP output
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     * @throws PageNotFoundException
+     * @throws InstantiationException
+     */
     private String invokeControllerMethod(RequestContext ctx) throws IllegalAccessException,
             InvocationTargetException, PageNotFoundException, InstantiationException
     {
@@ -148,6 +173,11 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
+    /**
+     * @param ctx - request context
+     * @param path - request URI
+     * @return true if successful
+     */
     private boolean getDefaultHandler(RequestContext ctx, String path) {
         List<String> items = new LinkedList<>(Arrays.asList(path.split("/")));
 

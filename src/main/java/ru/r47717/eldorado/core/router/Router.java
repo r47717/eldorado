@@ -1,4 +1,4 @@
-package ru.r47717.eldorado.core;
+package ru.r47717.eldorado.core.router;
 
 import ru.r47717.eldorado.core.di.Container;
 import ru.r47717.eldorado.core.di.Inject;
@@ -10,14 +10,14 @@ import java.util.function.Function;
 
 public class Router {
 
-    class RouterEntry {
-        boolean isClosure;
+    public class RouterEntry {
+        public boolean isClosure;
         String method;
         String pattern;
-        Class controller;
-        String fn;
-        Function<String, String> closure;
-        Map<Integer, SegmentData> segments;
+        public Class controller;
+        public String fn;
+        public Function<String, String> closure;
+        public Map<Integer, SegmentData> segments;
 
         RouterEntry() {
             this.isClosure = false;
@@ -38,11 +38,11 @@ public class Router {
         }
     }
 
-    class SegmentData {
+    public class SegmentData {
         int position;
-        boolean isParameter;
+        public boolean isParameter;
         String name;
-        String value;
+        public String value;
 
         SegmentData() {
             isParameter = false;
@@ -59,7 +59,7 @@ public class Router {
     private Map<String, RouterEntry> routes = new HashMap<>();
 
 
-    RouterEntry retrieve(String route) {
+    public RouterEntry retrieve(String route) {
         return getMatch(route);
     }
 

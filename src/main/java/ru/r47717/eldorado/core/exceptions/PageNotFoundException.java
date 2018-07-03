@@ -1,4 +1,4 @@
-package ru.r47717.eldorado.core;
+package ru.r47717.eldorado.core.exceptions;
 
 public class PageNotFoundException extends Exception {
 }

@@ -1,6 +1,6 @@
 package app;
 
-import ru.r47717.eldorado.core.Router;
+import ru.r47717.eldorado.core.router.Router;
 import app.controllers.HomeController;
 
 public class Routes

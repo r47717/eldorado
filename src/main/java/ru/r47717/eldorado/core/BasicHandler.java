@@ -6,6 +6,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import app.Routes;
 import ru.r47717.eldorado.core.controllers.InternalServerErrorController;
 import ru.r47717.eldorado.core.controllers.PageNotFoundController;
+import ru.r47717.eldorado.core.di.Container;
+import ru.r47717.eldorado.core.di.Inject;
+import ru.r47717.eldorado.core.exceptions.NoDefaultConstructorException;
 import ru.r47717.eldorado.core.exceptions.PageNotFoundException;
 import ru.r47717.eldorado.core.router.Router;
 import ru.r47717.eldorado.core.router.RouterEntry;
@@ -16,6 +19,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -29,6 +35,7 @@ public class BasicHandler extends AbstractHandler {
 
     private final static String DEFAULT_METHOD_NAME = "index";
     private final RouterInterface router = new Router();
+    private Map<Class, Object> controllerCache = new HashMap<>();
 
     private static class RequestContext {
         private Class controllerClass = null;
@@ -132,8 +139,7 @@ public class BasicHandler extends AbstractHandler {
      * @throws InstantiationException
      */
     private String invokeControllerMethod(RequestContext ctx) throws IllegalAccessException,
-            InvocationTargetException, PageNotFoundException, InstantiationException
-    {
+            InvocationTargetException, PageNotFoundException, InstantiationException, NoDefaultConstructorException {
         String output = null;
         boolean methodFound = false;
 
@@ -142,7 +148,24 @@ public class BasicHandler extends AbstractHandler {
             return ctx.closure.apply(param);
         }
 
-        Object controller = ctx.controllerClass.newInstance();
+        Object controller = controllerCache.get(ctx.controllerClass);
+
+        if (controller == null) {
+            Constructor[] constructors = ctx.controllerClass.getConstructors();
+            for (Constructor constructor: constructors) {
+                if (constructor.getParameterCount() == 0) {
+                    controller = constructor.newInstance();
+                    break;
+                }
+            }
+            if (controller == null) {
+                throw new NoDefaultConstructorException();
+            }
+
+            controllerCache.put(ctx.controllerClass, controller);
+        }
+
+        processAnnotations(ctx.controllerClass, controller);
 
         for (Method method: controller.getClass().getMethods()) {
             if (method.getName().equals(ctx.methodName)) {
@@ -168,6 +191,25 @@ public class BasicHandler extends AbstractHandler {
         }
 
         return output;
+    }
+
+    /**
+     * @param controllerClass - controller class to scan for inject annotations
+     * @param controllerInstance - controller instance to inject dependencies to
+     */
+    private void processAnnotations(Class controllerClass, Object controllerInstance) {
+        Field[] fields = controllerClass.getDeclaredFields();
+        for (Field field: fields) {
+            Annotation annotation = field.getAnnotation(Inject.class);
+            if (annotation != null) {
+                try {
+                    Container.inject(controllerInstance, field);
+                } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                    System.out.println("Error: could not inject dependency to the controller");
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
 

@@ -53,8 +53,6 @@ public class Router implements RouterInterface {
         entry.segments = parsePattern(pattern);
 
         routes.put(pattern, entry);
-
-        processAnnotations(controller);
     }
 
     public void method(String method, String pattern, Function<String, String> closure) {
@@ -70,17 +68,6 @@ public class Router implements RouterInterface {
         entry.segments = parsePattern(pattern);
 
         routes.put(pattern, entry);
-    }
-
-
-    private void processAnnotations(Class controllerClass) {
-        Field[] fields = controllerClass.getDeclaredFields();
-        for (Field field: fields) {
-            Annotation annotation = field.getAnnotation(Inject.class);
-            if (annotation != null) {
-                Container.inject(controllerClass, field);
-            }
-        }
     }
 
 

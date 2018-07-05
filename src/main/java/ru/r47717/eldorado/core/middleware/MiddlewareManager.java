@@ -15,14 +15,16 @@ public class MiddlewareManager implements MiddlewareManagerInterface
     }
 
     @Override
-    public void run(Request request) {
+    public boolean run(Request request) {
         Iterator<MiddlewareInterface> iterator = middleware.iterator();
         while (iterator.hasNext()) {
             MiddlewareInterface middleware = iterator.next();
             if (!middleware.run(request)) {
-                break;
+                return false;
             }
         }
+
+        return true;
     }
 
 }

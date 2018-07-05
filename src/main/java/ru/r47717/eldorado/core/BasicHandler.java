@@ -68,7 +68,9 @@ public class BasicHandler extends AbstractHandler {
                         HttpServletRequest request,
                         HttpServletResponse response) throws IOException
     {
-        middlewareManager.run(baseRequest);
+        if (!middlewareManager.run(baseRequest)) {
+            return;
+        }
 
         RequestContext ctx = new RequestContext();
 

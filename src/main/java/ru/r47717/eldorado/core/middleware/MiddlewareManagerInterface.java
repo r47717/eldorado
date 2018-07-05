@@ -4,5 +4,5 @@ import org.eclipse.jetty.server.Request;
 
 public interface MiddlewareManagerInterface {
     void addMiddleware(MiddlewareInterface middleware);
-    void run(Request request);
+    boolean run(Request request);
 }

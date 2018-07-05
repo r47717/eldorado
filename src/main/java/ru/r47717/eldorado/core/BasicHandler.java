@@ -1,5 +1,6 @@
 package ru.r47717.eldorado.core;
 
+import app.config.MiddlewareConfig;
 import com.google.gson.Gson;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -10,6 +11,8 @@ import ru.r47717.eldorado.core.di.Container;
 import ru.r47717.eldorado.core.di.Inject;
 import ru.r47717.eldorado.core.exceptions.NoDefaultConstructorException;
 import ru.r47717.eldorado.core.exceptions.PageNotFoundException;
+import ru.r47717.eldorado.core.middleware.MiddlewareManager;
+import ru.r47717.eldorado.core.middleware.MiddlewareManagerInterface;
 import ru.r47717.eldorado.core.router.Router;
 import ru.r47717.eldorado.core.router.RouterEntry;
 import ru.r47717.eldorado.core.router.RouterInterface;
@@ -35,6 +38,7 @@ public class BasicHandler extends AbstractHandler {
 
     private final static String DEFAULT_METHOD_NAME = "index";
     private final RouterInterface router = new Router();
+    private final MiddlewareManagerInterface middlewareManager = new MiddlewareManager();
     private Map<Class, Object> controllerCache = new HashMap<>();
 
     private static class RequestContext {
@@ -47,6 +51,7 @@ public class BasicHandler extends AbstractHandler {
 
     BasicHandler() {
         Routes.make(router);
+        MiddlewareConfig.config(middlewareManager);
     }
 
 
@@ -63,6 +68,8 @@ public class BasicHandler extends AbstractHandler {
                         HttpServletRequest request,
                         HttpServletResponse response) throws IOException
     {
+        middlewareManager.run(baseRequest);
+
         RequestContext ctx = new RequestContext();
 
         String output;

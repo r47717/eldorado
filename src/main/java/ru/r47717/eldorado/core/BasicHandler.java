@@ -17,7 +17,6 @@ import ru.r47717.eldorado.core.router.Router;
 import ru.r47717.eldorado.core.router.RouterEntry;
 import ru.r47717.eldorado.core.router.RouterInterface;
 import ru.r47717.eldorado.core.router.SegmentData;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;

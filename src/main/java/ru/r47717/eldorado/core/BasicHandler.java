@@ -13,7 +13,6 @@ import ru.r47717.eldorado.core.exceptions.NoDefaultConstructorException;
 import ru.r47717.eldorado.core.exceptions.PageNotFoundException;
 import ru.r47717.eldorado.core.middleware.MiddlewareManager;
 import ru.r47717.eldorado.core.middleware.MiddlewareManagerInterface;
-import ru.r47717.eldorado.core.router.Router;
 import ru.r47717.eldorado.core.router.RouterEntry;
 import ru.r47717.eldorado.core.router.RouterInterface;
 import ru.r47717.eldorado.core.router.SegmentData;
@@ -36,7 +35,7 @@ import java.util.function.Function;
 public class BasicHandler extends AbstractHandler {
 
     private final static String DEFAULT_METHOD_NAME = "index";
-    private final RouterInterface router = new Router();
+    private RouterInterface router;
     private final MiddlewareManagerInterface middlewareManager = new MiddlewareManager();
     private Map<Class, Object> controllerCache = new HashMap<>();
 
@@ -48,8 +47,8 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    BasicHandler() {
-        Routes.make(router);
+    BasicHandler(RouterInterface router) {
+        this.router = router;
         MiddlewareConfig.config(middlewareManager);
     }
 

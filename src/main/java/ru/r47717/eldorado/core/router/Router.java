@@ -12,32 +12,43 @@ public class Router implements RouterInterface {
 
     private Map<String, RouterEntry> routes = new HashMap<>();
 
+    @Override
+    public Map<String, RouterEntry> getRoutes() {
+        return routes;
+    }
 
+    @Override
     public RouterEntry retrieve(String route) {
         return getMatch(route);
     }
 
 
+    @Override
     public void get(String route, Class controller, String fn) {
         method("get", route, controller, fn);
     }
 
+    @Override
     public void get(String route, Function<String, String> closure) {
         method("get", route, closure);
     }
 
+    @Override
     public void post(String route, Class controller, String fn) {
         method("post", route, controller, fn);
     }
 
+    @Override
     public void put(String route, Class controller, String fn) {
         method("put", route, controller, fn);
     }
 
+    @Override
     public void delete(String route, Class controller, String fn) {
         method("delete", route, controller, fn);
     }
 
+    @Override
     public void method(String method, String pattern, Class controller, String fn) {
         if (routes.containsKey(pattern)) {
             return;
@@ -55,6 +66,7 @@ public class Router implements RouterInterface {
         routes.put(pattern, entry);
     }
 
+    @Override
     public void method(String method, String pattern, Function<String, String> closure) {
         if (routes.containsKey(pattern)) {
             return;

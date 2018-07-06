@@ -1,8 +1,10 @@
 package ru.r47717.eldorado.core.api;
 
-import java.util.Map;
+import ru.r47717.eldorado.core.router.RouterInterface;
+import java.util.List;
+
 
 public interface ApiManagerInterface {
-    void add(String name, String url);
-    Map<String, String> getApi();
+    void build(RouterInterface router);
+    List<ApiEntry> getApi();
 }

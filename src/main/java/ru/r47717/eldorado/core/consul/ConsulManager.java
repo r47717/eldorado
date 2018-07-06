@@ -2,11 +2,10 @@ package ru.r47717.eldorado.core.consul;
 
 import com.orbitz.consul.Consul;
 import com.orbitz.consul.KeyValueClient;
+import ru.r47717.eldorado.core.api.ApiEntry;
 import ru.r47717.eldorado.core.api.ApiManagerInterface;
 import ru.r47717.eldorado.core.env.EnvManager;
-import ru.r47717.eldorado.core.router.RouterInterface;
-
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -44,12 +43,11 @@ public class ConsulManager
 
     public static void registerMyself(ApiManagerInterface apiManager) {
         String path = "/services/" + EnvManager.getServiceName() + "/";
-        Map<String, String> apiMap = apiManager.getApi();
-        for (Map.Entry<String, String> entry: apiMap.entrySet()) {
-            String name = entry.getKey();
-            String uri = entry.getValue();
-
-            writeToConsul(path + "api/" + name, uri);
-        }
+        List<ApiEntry> api = apiManager.getApi();
+        api.forEach(item -> {
+            String name = item.getName();
+            String uri = item.getUri();
+            writeToConsul(path + "api/" + name, "test uri");
+        });
     }
 }

@@ -1,5 +1,6 @@
 package ru.r47717.eldorado.core.router;
 
+import java.util.Map;
 import java.util.function.Function;
 
 public interface RouterInterface {
@@ -18,4 +19,6 @@ public interface RouterInterface {
     void method(String method, String pattern, Class controller, String fn);
 
     void method(String method, String pattern, Function<String, String> closure);
+
+    Map<String, RouterEntry> getRoutes();
 }

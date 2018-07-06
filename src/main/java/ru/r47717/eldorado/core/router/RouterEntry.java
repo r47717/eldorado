@@ -7,8 +7,8 @@ import java.util.function.Function;
 
 public class RouterEntry {
     public boolean isClosure;
-    String method;
-    String pattern;
+    public String method;
+    public String pattern;
     public Class controller;
     public String fn;
     public Function<String, String> closure;

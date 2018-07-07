@@ -13,9 +13,15 @@ public class ConsulManager
     private static Thread passThread;
 
     public boolean consulHealthCheck() {
-        // TODO
-        return true;
+        String url = EnvManager.getConsulServer();
+        if (url == null) {
+            return false;
+        }
+
+        Consul consul = Consul.builder().withUrl(url).build();
+        return consul != null;
     }
+
 
     public static String readFromConsul(String key) {
         String url = EnvManager.getConsulServer();

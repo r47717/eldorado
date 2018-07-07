@@ -5,6 +5,7 @@ import app.Routes;
 import org.eclipse.jetty.server.Server;
 import ru.r47717.eldorado.core.api.ApiManager;
 import ru.r47717.eldorado.core.api.ApiManagerInterface;
+import ru.r47717.eldorado.core.db.DB;
 import ru.r47717.eldorado.core.env.EnvManager;
 import ru.r47717.eldorado.core.providers.ProviderManager;
 import ru.r47717.eldorado.core.providers.ProviderManagerInterface;
@@ -27,6 +28,8 @@ public class App
 
         ProviderManagerInterface providerManager = new ProviderManager();
         Providers.build(providerManager);
+
+        DB.sampleQuery();
 
         Server server = new Server(EnvManager.getServicePort());
         server.setHandler(new BasicHandler(router));

@@ -35,6 +35,8 @@ public class ApiManager implements ApiManagerInterface {
 
     @Override
     public void registerMyself() {
+        ConsulManager.registerService();
+
         String path = "/services/" + EnvManager.getServiceName() + "/";
         api.forEach(item -> {
             String name = item.getName();

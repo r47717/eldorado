@@ -23,6 +23,9 @@ public class App
 
         apiManager.registerMyself();
 
+        String serviceUrl = ConsulManager.getAliveProviderUrl(EnvManager.getServiceName());
+        System.out.println(serviceUrl);
+
         Server server = new Server(EnvManager.getServicePort());
         server.setHandler(new BasicHandler(router));
         server.start();

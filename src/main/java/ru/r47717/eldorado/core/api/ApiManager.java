@@ -5,7 +5,10 @@ import ru.r47717.eldorado.core.env.EnvManager;
 import ru.r47717.eldorado.core.router.RouterEntry;
 import ru.r47717.eldorado.core.router.RouterInterface;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,9 +36,29 @@ public class ApiManager implements ApiManagerInterface {
     }
 
 
+    private String getMyHostName() {
+        InetAddress addr;
+
+        try {
+            addr = InetAddress.getLocalHost();
+            return "http://" + addr.getHostName() + ":" + EnvManager.getServicePort();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+        return "";
+    }
+
+
     @Override
     public void registerMyself() {
-        ConsulManager.registerService();
+        List<String> tags = new ArrayList<>();
+        tags.add("tag1");
+        tags.add("tag2");
+        tags.add("tag3");
+        Map<String, String> meta = new HashMap<>();
+        meta.put("url", getMyHostName());
+        ConsulManager.registerService(tags, meta);
 
         String path = "/services/" + EnvManager.getServiceName() + "/";
         api.forEach(item -> {

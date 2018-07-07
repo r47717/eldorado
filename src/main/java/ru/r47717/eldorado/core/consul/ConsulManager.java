@@ -1,19 +1,16 @@
 package ru.r47717.eldorado.core.consul;
 
-import com.orbitz.consul.AgentClient;
-import com.orbitz.consul.Consul;
-import com.orbitz.consul.KeyValueClient;
-import com.orbitz.consul.NotRegisteredException;
-import ru.r47717.eldorado.core.api.ApiEntry;
-import ru.r47717.eldorado.core.api.ApiManagerInterface;
+import com.orbitz.consul.*;
+import com.orbitz.consul.model.health.Service;
+import com.orbitz.consul.model.health.ServiceHealth;
 import ru.r47717.eldorado.core.env.EnvManager;
-import java.util.List;
-import java.util.Optional;
+
+import java.util.*;
 
 
 public class ConsulManager
 {
-    private static Runnable passThread;
+    private static Thread passThread;
 
     public boolean consulHealthCheck() {
         // TODO
@@ -45,19 +42,20 @@ public class ConsulManager
         kvClient.putValue(key, value);
     }
 
-    public static void registerService() {
-        Consul consul = Consul.builder().build(); // connect to Consul on localhost
+    public static void registerService(List<String> tags, Map<String, String> meta) {
+        String url = EnvManager.getConsulServer();
+        Consul consul = Consul.builder().withUrl(url).build();
         AgentClient agentClient = consul.agentClient();
 
         String serviceName = EnvManager.getServiceName();
         final String serviceId = serviceName;
 
-        agentClient.register(EnvManager.getServicePort(), 3L, serviceName, serviceId); // registers with a TTL of 3 seconds
+        agentClient.register(EnvManager.getServicePort(), 3L, serviceName, serviceId, tags, meta);
 
         passThread = new Thread(() -> {
             try {
                 while(true) {
-                    System.out.println("pass");
+                    //System.out.println("pass");
                     agentClient.pass(serviceId);
                     Thread.sleep(2000);
                 }
@@ -67,6 +65,25 @@ public class ConsulManager
 
         });
 
-        passThread.run();
+        passThread.start();
+    }
+
+    public static String getAliveProviderUrl(String name) {
+        String consulUrl = EnvManager.getConsulServer();
+        Consul consul = Consul.builder().withUrl(consulUrl).build();
+        HealthClient healthClient = consul.healthClient();
+
+        List<ServiceHealth> nodes = healthClient.getHealthyServiceInstances(name).getResponse();
+        if (nodes.size() > 0) {
+            Service service = nodes.get(0).getService();
+            Map<String, String> meta = service.getMeta();
+            String url = meta.get("url");
+
+            return url;
+        }
+
+        System.out.println("No alive service instances with name " + name);
+
+        return null;
     }
 }

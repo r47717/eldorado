@@ -21,7 +21,7 @@ public class App
         ApiManagerInterface apiManager = new ApiManager();
         apiManager.build(router);
 
-        ConsulManager.registerMyself(apiManager);
+        apiManager.registerMyself();
 
         Server server = new Server(EnvManager.getServicePort());
         server.setHandler(new BasicHandler(router));

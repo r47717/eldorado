@@ -9,11 +9,11 @@ public class Routes
 
         // Add routes here
 
-        router.get("/", HomeController.class, "index");
-        router.get("/test2", HomeController.class, "index2");
+        router.get("root", "/", HomeController.class, "index");
+        router.get("test2", "/test2", HomeController.class, "index2");
 
-        router.get("/people/{name}", HomeController.class, "getPerson");
+        router.get("people-get", "/people/{name}", HomeController.class, "getPerson");
 
-        router.get("/closure/{param}", str -> "URL parameter is: " + str);
+        router.get("closure-example", "/closure/{param}", str -> "URL parameter is: " + str);
     }
 }

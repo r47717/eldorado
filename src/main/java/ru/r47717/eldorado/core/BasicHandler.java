@@ -116,16 +116,16 @@ public class BasicHandler extends AbstractHandler {
 
         if (entry != null) {
 
-            if (entry.isClosure) {
-               ctx.closure = entry.closure;
+            if (entry.isClosure()) {
+               ctx.closure = entry.getClosure();
             } else {
-                ctx.controllerClass = entry.controller;
-                ctx.methodName = entry.fn;
+                ctx.controllerClass = entry.getController();
+                ctx.methodName = entry.getFn();
             }
 
-            entry.segments.entrySet().forEach(segmentDataEntry -> {
+            entry.getSegments().entrySet().forEach(segmentDataEntry -> {
                 SegmentData data = segmentDataEntry.getValue();
-                if (data.isParameter) {
+                if (data.getIsParameter()) {
                     ctx.params.add(data);
                 }
             });
@@ -151,7 +151,7 @@ public class BasicHandler extends AbstractHandler {
         boolean methodFound = false;
 
         if (ctx.closure != null) {
-            String param = ctx.params.size() > 0 ? ctx.params.get(0).value : "";
+            String param = ctx.params.size() > 0 ? ctx.params.get(0).getValue() : "";
             return ctx.closure.apply(param);
         }
 
@@ -180,7 +180,7 @@ public class BasicHandler extends AbstractHandler {
 
                 String[] paramsArray = new String[ctx.params.size()];
                 for (int i = 0; i < ctx.params.size(); i++) {
-                    paramsArray[i] = ctx.params.get(i).value;
+                    paramsArray[i] = ctx.params.get(i).getValue();
                 }
 
                 Map<String, String> map;

@@ -6,13 +6,14 @@ import java.util.function.Function;
 
 
 public class RouterEntry {
-    public boolean isClosure;
-    public String method;
-    public String pattern;
-    public Class controller;
-    public String fn;
-    public Function<String, String> closure;
-    public Map<Integer, SegmentData> segments;
+    String name;
+    boolean isClosure;
+    String method;
+    String pattern;
+    Class controller;
+    String fn;
+    Function<String, String> closure;
+    Map<Integer, SegmentData> segments;
 
     RouterEntry() {
         this.isClosure = false;
@@ -22,6 +23,7 @@ public class RouterEntry {
     }
 
     RouterEntry(RouterEntry that) {
+        this.name = that.name;
         this.isClosure = that.isClosure;
         this.method = that.method;
         this.pattern = that.pattern;
@@ -30,5 +32,37 @@ public class RouterEntry {
         this.closure = that.closure;
         this.segments = new HashMap<>();
         that.segments.forEach((k, v) -> this.segments.put(k, new SegmentData(v)));
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isClosure() {
+        return isClosure;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public String getPattern() {
+        return pattern;
+    }
+
+    public Class getController() {
+        return controller;
+    }
+
+    public String getFn() {
+        return fn;
+    }
+
+    public Function<String, String> getClosure() {
+        return closure;
+    }
+
+    public Map<Integer, SegmentData> getSegments() {
+        return segments;
     }
 }

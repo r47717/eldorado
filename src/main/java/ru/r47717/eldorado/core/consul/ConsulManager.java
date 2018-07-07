@@ -40,14 +40,4 @@ public class ConsulManager
 
         kvClient.putValue(key, value);
     }
-
-    public static void registerMyself(ApiManagerInterface apiManager) {
-        String path = "/services/" + EnvManager.getServiceName() + "/";
-        List<ApiEntry> api = apiManager.getApi();
-        api.forEach(item -> {
-            String name = item.getName();
-            String uri = item.getUri();
-            writeToConsul(path + "api/" + name, "test uri");
-        });
-    }
 }

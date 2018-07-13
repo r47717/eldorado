@@ -3,7 +3,6 @@ package ru.r47717.eldorado.core.db;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class DB {
@@ -18,7 +17,7 @@ public class DB {
         }
     }
 
-    public static Map<Integer, String> select(String sql) {
+    public static Map<Integer, String> select1(String sql) {
         try (Connection conn = DriverManager.getConnection(url);
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql)) {
@@ -55,6 +54,22 @@ public class DB {
 
         sql = "select * from users;";
 
-        System.out.println(select(sql).toString());
+        //System.out.println(select(sql).toString());
+    }
+
+    public static QueryBuilder select() {
+        return new QueryBuilder(QueryBuilder.Statement.SELECT);
+    }
+
+    public static QueryBuilder insert() {
+        return new QueryBuilder(QueryBuilder.Statement.INSERT);
+    }
+
+    public static QueryBuilder update() {
+        return new QueryBuilder(QueryBuilder.Statement.UPDATE);
+    }
+
+    public static QueryBuilder delete() {
+        return new QueryBuilder(QueryBuilder.Statement.DELETE);
     }
 }

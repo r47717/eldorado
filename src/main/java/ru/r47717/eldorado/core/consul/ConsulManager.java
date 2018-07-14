@@ -50,6 +50,11 @@ public class ConsulManager
 
     public static void registerService(List<String> tags, Map<String, String> meta) {
         String url = EnvManager.getConsulServer();
+
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+
         Consul consul = Consul.builder().withUrl(url).build();
         AgentClient agentClient = consul.agentClient();
 

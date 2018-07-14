@@ -29,7 +29,7 @@ public class App
         ProviderManagerInterface providerManager = new ProviderManager();
         Providers.build(providerManager);
 
-        DB.sampleQuery();
+        //DB.sampleQuery();
 
         Server server = new Server(EnvManager.getServicePort());
         server.setHandler(new BasicHandler(router));

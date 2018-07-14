@@ -1,7 +1,7 @@
 package ru.r47717.eldorado.core.db;
 
 
-import java.util.Collection;
+import java.sql.*;
 
 public class QueryBuilder {
     enum Statement {
@@ -25,6 +25,7 @@ public class QueryBuilder {
     private String where = "";
     private String orderBy = "";
     private OrderDirection orderDirection;
+    private String sql = "";
 
     public QueryBuilder(Statement statement) {
         this.statement = statement;
@@ -72,7 +73,7 @@ public class QueryBuilder {
 
     private String buildInsert() {
         String fieldsPart = fields.isEmpty() ? "" : "(" + fields + ")";
-        return "insert into " + into + " " + fieldsPart + " values " + values;
+        return "insert into " + into + " " + fieldsPart + " values " + values + ";";
     }
 
     private String buildUpdate() {
@@ -83,22 +84,38 @@ public class QueryBuilder {
         return "";
     }
 
-    public String get() {
+    public ResultSet get() {
         switch (statement) {
             case SELECT:
-                return buildSelect();
+                sql = buildSelect();
+                break;
             case INSERT:
-                return buildInsert();
+                sql = buildInsert();
+                break;
             case UPDATE:
-                return buildUpdate();
+                sql = buildUpdate();
+                break;
             case DELETE:
-                return buildDelete();
+                sql = buildDelete();
+                break;
+            default:
+                System.out.println("Unknown DB statement");
+                return null;
+        }
+
+        System.out.println("sql:");
+        System.out.println(sql);
+
+        try
+        {
+            Connection conn = DriverManager.getConnection(DB.DB_DATA);
+            java.sql.Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            return rs; // TODO: release resorces
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
 
         return null;
-    }
-
-    public String first() {
-        return "";
     }
 }

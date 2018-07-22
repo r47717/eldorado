@@ -4,7 +4,6 @@ import app.config.MiddlewareConfig;
 import com.google.gson.Gson;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import app.Routes;
 import ru.r47717.eldorado.core.controllers.InternalServerErrorController;
 import ru.r47717.eldorado.core.controllers.PageNotFoundController;
 import ru.r47717.eldorado.core.di.Container;
@@ -37,7 +36,7 @@ public class BasicHandler extends AbstractHandler {
     private final static String DEFAULT_METHOD_NAME = "index";
     private RouterInterface router;
     private final MiddlewareManagerInterface middlewareManager = new MiddlewareManager();
-    private Map<Class, Object> controllerCache = new HashMap<>();
+    private Map<Class, Object> controllerCache = Collections.synchronizedMap(new HashMap<>());
 
     private static class RequestContext {
         private Class controllerClass = null;

@@ -1,4 +1,4 @@
-package ru.r47717.eldorado.core;
+package ru.r47717.eldorado.core.handler;
 
 import app.config.MiddlewareConfig;
 import com.google.gson.Gson;
@@ -10,10 +10,10 @@ import ru.r47717.eldorado.core.di.Container;
 import ru.r47717.eldorado.core.di.Inject;
 import ru.r47717.eldorado.core.exceptions.NoDefaultConstructorException;
 import ru.r47717.eldorado.core.exceptions.PageNotFoundException;
+import ru.r47717.eldorado.core.middleware.SimpleMiddlewareManager;
 import ru.r47717.eldorado.core.middleware.MiddlewareManager;
-import ru.r47717.eldorado.core.middleware.MiddlewareManagerInterface;
 import ru.r47717.eldorado.core.router.RouterEntry;
-import ru.r47717.eldorado.core.router.RouterInterface;
+import ru.r47717.eldorado.core.router.Router;
 import ru.r47717.eldorado.core.router.SegmentData;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,6 +25,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 
@@ -34,9 +35,9 @@ import java.util.function.Function;
 public class BasicHandler extends AbstractHandler {
 
     private final static String DEFAULT_METHOD_NAME = "index";
-    private RouterInterface router;
-    private final MiddlewareManagerInterface middlewareManager = new MiddlewareManager();
-    private Map<Class, Object> controllerCache = Collections.synchronizedMap(new HashMap<>());
+    private Router router;
+    private final MiddlewareManager middlewareManager = new SimpleMiddlewareManager();
+    private Map<Class, Object> controllerCache = new ConcurrentHashMap<>();
 
     private static class RequestContext {
         private Class controllerClass = null;
@@ -46,19 +47,12 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    BasicHandler(RouterInterface router) {
+    public BasicHandler(Router router) {
         this.router = router;
         MiddlewareConfig.config(middlewareManager);
     }
 
 
-    /**
-     * @param body - request URI
-     * @param baseRequest - original HTTP request
-     * @param request - servlet request
-     * @param response - servlet response
-     * @throws IOException
-     */
     @Override
     public void handle(String body,
                         Request baseRequest,
@@ -104,46 +98,33 @@ public class BasicHandler extends AbstractHandler {
     }
 
 
-    /**
-     * @param ctx request context
-     * @param body request URL
-     * @return true if found
-     */
     private boolean getRegisteredHandler(RequestContext ctx, String body)
     {
         RouterEntry entry = router.retrieve(body);
 
-        if (entry != null) {
-
-            if (entry.isClosure()) {
-               ctx.closure = entry.getClosure();
-            } else {
-                ctx.controllerClass = entry.getController();
-                ctx.methodName = entry.getFn();
-            }
-
-            entry.getSegments().entrySet().forEach(segmentDataEntry -> {
-                SegmentData data = segmentDataEntry.getValue();
-                if (data.getIsParameter()) {
-                    ctx.params.add(data);
-                }
-            });
-
-            return true;
+        if (entry == null) {
+            return false;
         }
 
-        return false; // route is not registered
+
+        if (entry.isClosure()) {
+           ctx.closure = entry.getClosure();
+        } else {
+            ctx.controllerClass = entry.getController();
+            ctx.methodName = entry.getFn();
+        }
+
+        entry.getSegments().entrySet().forEach(segmentDataEntry -> {
+            SegmentData data = segmentDataEntry.getValue();
+            if (data.getIsParameter()) {
+                ctx.params.add(data);
+            }
+        });
+
+        return true;
     }
 
 
-    /**
-     * @param ctx - request context
-     * @return HTTP output
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws PageNotFoundException
-     * @throws InstantiationException
-     */
     private String invokeControllerMethod(RequestContext ctx) throws IllegalAccessException,
             InvocationTargetException, PageNotFoundException, InstantiationException, NoDefaultConstructorException {
         String output = null;
@@ -199,10 +180,7 @@ public class BasicHandler extends AbstractHandler {
         return output;
     }
 
-    /**
-     * @param controllerClass - controller class to scan for inject annotations
-     * @param controllerInstance - controller instance to inject dependencies to
-     */
+
     private void processAnnotations(Class controllerClass, Object controllerInstance) {
         Field[] fields = controllerClass.getDeclaredFields();
         for (Field field: fields) {
@@ -241,7 +219,7 @@ public class BasicHandler extends AbstractHandler {
         if (items.size() > 0) {
             String segment = items.get(0);
             controllerName = segment.substring(0, 1).toUpperCase() +
-                    segment.substring(1).toLowerCase() + "Controller";
+                segment.substring(1).toLowerCase() + "Controller";
         } else {
             return false; // no controller name
         }

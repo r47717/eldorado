@@ -2,7 +2,7 @@ package ru.r47717.eldorado.core.middleware;
 
 import org.eclipse.jetty.server.Request;
 
-public class LoggerMiddleware implements MiddlewareInterface
+public class LoggerMiddleware implements Middleware
 {
     @Override
     public boolean run(Request request) {

@@ -3,14 +3,14 @@ package ru.r47717.eldorado.core;
 import app.Providers;
 import app.Routes;
 import org.eclipse.jetty.server.Server;
+import ru.r47717.eldorado.core.api.SimpleApiManager;
 import ru.r47717.eldorado.core.api.ApiManager;
-import ru.r47717.eldorado.core.api.ApiManagerInterface;
-import ru.r47717.eldorado.core.db.DB;
 import ru.r47717.eldorado.core.env.EnvManager;
+import ru.r47717.eldorado.core.handler.BasicHandler;
+import ru.r47717.eldorado.core.providers.SimpleProviderManager;
 import ru.r47717.eldorado.core.providers.ProviderManager;
-import ru.r47717.eldorado.core.providers.ProviderManagerInterface;
+import ru.r47717.eldorado.core.router.SimpleRouter;
 import ru.r47717.eldorado.core.router.Router;
-import ru.r47717.eldorado.core.router.RouterInterface;
 
 public class App
 {
@@ -18,15 +18,15 @@ public class App
     {
         EnvManager.parseEnv();
 
-        RouterInterface router = new Router();
+        Router router = new SimpleRouter();
         Routes.make(router);
 
-        ApiManagerInterface apiManager = new ApiManager();
+        ApiManager apiManager = new SimpleApiManager();
         apiManager.build(router);
 
         apiManager.registerMyself();
 
-        ProviderManagerInterface providerManager = new ProviderManager();
+        ProviderManager providerManager = new SimpleProviderManager();
         Providers.build(providerManager);
 
         //DB.sampleQuery();
